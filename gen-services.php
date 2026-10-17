@@ -4,6 +4,7 @@ $tplDir  = getenv('TPL_DIR') ?: '/boot/config/plugins/dockerMan/templates-user';
 $ip      = getenv('HOST_IP') ?: '192.168.0.20';
 $appdata = getenv('APPDATA') ?: '/mnt/cache/appdata';
 $self    = strtolower(getenv('SELF_NAME') ?: 'homepage');
+$unraidUrl = getenv('UNRAID_URL') ?: "https://$ip:444";
 $running = array_filter(array_map('trim', file('php://stdin')));
 $runLc   = array_map('strtolower', $running);
 
@@ -82,8 +83,14 @@ foreach (glob("$tplDir/my-*.xml") as $f) {
   $out[$grp][] = $svc;
 }
 
+$ur = ['name' => 'Unraid', 'href' => $unraidUrl . '/', 'icon' => 'unraid.png', 'desc' => 'Server ' . $ip];
+if (!empty($hpEnv['HOMEPAGE_VAR_UNRAID_KEY']))
+  $ur['widget'] = ['type' => 'unraid', 'url' => $unraidUrl, 'key' => '{{HOMEPAGE_VAR_UNRAID_KEY}}',
+    'fields' => ['status', 'cpu', 'memoryPercent', 'arrayFree', 'arrayUsedPercent', 'notifications']];
+$out = ['Unraid' => [$ur]] + $out;
+
 $q = fn($s) => '"' . str_replace(['\\','"'], ['\\\\','\\"'], $s) . '"';
-$order = array_values(array_unique(array_merge(array_keys($groups), array_keys($out), ['System'])));
+$order = array_values(array_unique(array_merge(['Unraid'], array_keys($groups), array_keys($out), ['System'])));
 foreach ($order as $g) {
   if (empty($out[$g])) continue;
   usort($out[$g], fn($a, $b) => strcasecmp($a['name'], $b['name']));
@@ -93,7 +100,7 @@ foreach ($order as $g) {
     echo "        href: {$q($s['href'])}\n";
     if ($s['icon'] !== '') echo "        icon: {$q($s['icon'])}\n";
     if (isset($s['desc'])) echo "        description: {$q($s['desc'])}\n";
-    echo "        server: unraid\n        container: {$q($s['container'])}\n";
+    if (isset($s['container'])) echo "        server: unraid\n        container: {$q($s['container'])}\n";
     if (isset($s['widget'])) {
       echo "        widget:\n";
       foreach ($s['widget'] as $k => $v) {

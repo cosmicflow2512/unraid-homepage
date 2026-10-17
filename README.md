@@ -25,6 +25,7 @@ Aufruf: `http://<SERVER-IP>:3010`
 |---|---|
 | `HOST_IP` | `192.168.0.20` |
 | `HP_PORT` | `3010` |
+| `UNRAID_URL` | `https://<HOST_IP>:444` |
 | `HP_DIR` | `/mnt/cache/appdata/homepage` |
 | `TPL_DIR` | `/boot/config/plugins/dockerMan/templates-user` |
 
@@ -69,6 +70,10 @@ MeinContainer=Werkzeuge
 1. In Jellyfin: Dashboard → API-Schlüssel → neuen Schlüssel anlegen.
 2. Unraid: homepage-Container bearbeiten → Feld **Jellyfin API-Key** (`HOMEPAGE_VAR_JELLYFIN_KEY`) ausfüllen → Apply.
 3. `refresh.sh` ausführen. Der Generator liest die Variable aus dem laufenden homepage-Container und legt das Widget an (`version: 2` für Jellyfin ≥ 10.12). Der Key selbst steht nicht in der `services.yaml`, sondern wird von Homepage aus der Variable eingesetzt.
+
+## Unraid-Kachel
+
+Steht als eigene Gruppe ganz oben (Reihenfolge über `layout` in `settings.yaml`) und verlinkt auf `UNRAID_URL`. Mit `HOMEPAGE_VAR_UNRAID_KEY` (API-Key mit Rolle ADMIN) kommt das Unraid-Widget dazu: Status, CPU, RAM, Array-Belegung, Benachrichtigungen. Voraussetzung laut Homepage-Doku: Unraid 7.2 oder Unraid-Connect-Plugin ab 2025.08.19.1850.
 
 ## Update auf neue Generator-Version
 

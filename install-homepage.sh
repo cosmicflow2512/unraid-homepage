@@ -3,6 +3,7 @@
 set -e
 HOST_IP="${HOST_IP:-192.168.0.20}"
 HP_PORT="${HP_PORT:-3010}"
+UNRAID_URL="${UNRAID_URL:-https://$HOST_IP:444}"
 HP_DIR="${HP_DIR:-/mnt/cache/appdata/homepage}"
 TPL_DIR="${TPL_DIR:-/boot/config/plugins/dockerMan/templates-user}"
 
@@ -34,6 +35,7 @@ cat > "$TPL_DIR/my-homepage.xml" <<EOF
   <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="ro" Description="Container-Status/Stats" Type="Path" Display="advanced" Required="false" Mask="false">/var/run/docker.sock</Config>
   <Config Name="HOMEPAGE_ALLOWED_HOSTS" Target="HOMEPAGE_ALLOWED_HOSTS" Default="$HOST_IP:$HP_PORT" Mode="" Description="Komma-getrennt, ohne Leerzeichen" Type="Variable" Display="always" Required="true" Mask="false">$HOST_IP:$HP_PORT</Config>
   <Config Name="Jellyfin API-Key" Target="HOMEPAGE_VAR_JELLYFIN_KEY" Default="" Mode="" Description="Jellyfin: Dashboard &gt; API-Schluessel. Danach refresh.sh ausfuehren." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Unraid API-Key" Target="HOMEPAGE_VAR_UNRAID_KEY" Default="" Mode="" Description="Unraid: Settings &gt; Management Access &gt; API Keys, Rolle ADMIN. Danach refresh.sh ausfuehren." Type="Variable" Display="always" Required="false" Mask="true"></Config>
 </Container>
 EOF
 
@@ -41,6 +43,18 @@ EOF
 cat > "$HP_DIR/config/settings.yaml" <<'EOF'
 title: Baum
 theme: dark
+layout:
+  Unraid:
+    style: row
+    columns: 1
+  Medien:
+  Arr:
+  Downloads:
+  PS5:
+  Smart Home:
+  Dokumente:
+  Netzwerk:
+  System:
 color: slate
 headerStyle: clean
 statusStyle: dot
@@ -81,7 +95,7 @@ cat > "$HP_DIR/config/bookmarks.yaml" <<EOF
 - Server:
     - Unraid:
         - abbr: UR
-          href: http://$HOST_IP/
+          href: $UNRAID_URL/
 - Dev:
     - GitHub:
         - abbr: GH
@@ -96,6 +110,7 @@ $tplDir  = getenv('TPL_DIR') ?: '/boot/config/plugins/dockerMan/templates-user';
 $ip      = getenv('HOST_IP') ?: '192.168.0.20';
 $appdata = getenv('APPDATA') ?: '/mnt/cache/appdata';
 $self    = strtolower(getenv('SELF_NAME') ?: 'homepage');
+$unraidUrl = getenv('UNRAID_URL') ?: "https://$ip:444";
 $running = array_filter(array_map('trim', file('php://stdin')));
 $runLc   = array_map('strtolower', $running);
 
@@ -174,8 +189,14 @@ foreach (glob("$tplDir/my-*.xml") as $f) {
   $out[$grp][] = $svc;
 }
 
+$ur = ['name' => 'Unraid', 'href' => $unraidUrl . '/', 'icon' => 'unraid.png', 'desc' => 'Server ' . $ip];
+if (!empty($hpEnv['HOMEPAGE_VAR_UNRAID_KEY']))
+  $ur['widget'] = ['type' => 'unraid', 'url' => $unraidUrl, 'key' => '{{HOMEPAGE_VAR_UNRAID_KEY}}',
+    'fields' => ['status', 'cpu', 'memoryPercent', 'arrayFree', 'arrayUsedPercent', 'notifications']];
+$out = ['Unraid' => [$ur]] + $out;
+
 $q = fn($s) => '"' . str_replace(['\\','"'], ['\\\\','\\"'], $s) . '"';
-$order = array_values(array_unique(array_merge(array_keys($groups), array_keys($out), ['System'])));
+$order = array_values(array_unique(array_merge(['Unraid'], array_keys($groups), array_keys($out), ['System'])));
 foreach ($order as $g) {
   if (empty($out[$g])) continue;
   usort($out[$g], fn($a, $b) => strcasecmp($a['name'], $b['name']));
@@ -185,7 +206,7 @@ foreach ($order as $g) {
     echo "        href: {$q($s['href'])}\n";
     if ($s['icon'] !== '') echo "        icon: {$q($s['icon'])}\n";
     if (isset($s['desc'])) echo "        description: {$q($s['desc'])}\n";
-    echo "        server: unraid\n        container: {$q($s['container'])}\n";
+    if (isset($s['container'])) echo "        server: unraid\n        container: {$q($s['container'])}\n";
     if (isset($s['widget'])) {
       echo "        widget:\n";
       foreach ($s['widget'] as $k => $v) {
@@ -207,7 +228,7 @@ cat > "$HP_DIR/refresh.sh" <<EOF
 #!/bin/bash
 cd "$HP_DIR"
 [ -f config/services.yaml ] && cp config/services.yaml config/services.yaml.bak
-docker ps --format '{{.Names}}' | HOST_IP=$HOST_IP TPL_DIR=$TPL_DIR APPDATA=$(dirname "$HP_DIR") php gen-services.php > config/services.yaml.new \
+docker ps --format '{{.Names}}' | HOST_IP=$HOST_IP UNRAID_URL=$UNRAID_URL TPL_DIR=$TPL_DIR APPDATA=$(dirname "$HP_DIR") php gen-services.php > config/services.yaml.new \
   && mv config/services.yaml.new config/services.yaml
 echo "services.yaml: \$(grep -c 'href:' config/services.yaml) Dienste"
 EOF
