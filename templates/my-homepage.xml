@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>homepage</Name>
+  <Repository>ghcr.io/gethomepage/homepage:latest</Repository>
+  <TemplateURL>https://raw.githubusercontent.com/cosmicflow2512/unraid-homepage/main/templates/my-homepage.xml</TemplateURL>
+  <Registry>https://github.com/gethomepage/homepage/pkgs/container/homepage</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/gethomepage/homepage</Support>
+  <Project>https://gethomepage.dev</Project>
+  <Overview>Startseite/Dashboard fuer alle Docker-Container (gethomepage).</Overview>
+  <Category>Tools: Network:Management</Category>
+  <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+  <Icon>https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/homepage.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <Config Name="WebUI" Target="3000" Default="3010" Mode="tcp" Description="Web-Port" Type="Port" Display="always" Required="true" Mask="false">3010</Config>
+  <Config Name="Config" Target="/app/config" Default="/tmp/t/appdata/homepage/config" Mode="rw" Description="YAML-Konfiguration" Type="Path" Display="always" Required="true" Mask="false">/tmp/t/appdata/homepage/config</Config>
+  <Config Name="Icons" Target="/app/public/icons" Default="/tmp/t/appdata/homepage/icons" Mode="rw" Description="Eigene Icons (/icons/name.png)" Type="Path" Display="always" Required="false" Mask="false">/tmp/t/appdata/homepage/icons</Config>
+  <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="ro" Description="Container-Status/Stats" Type="Path" Display="advanced" Required="false" Mask="false">/var/run/docker.sock</Config>
+  <Config Name="HOMEPAGE_ALLOWED_HOSTS" Target="HOMEPAGE_ALLOWED_HOSTS" Default="192.168.0.20:3010" Mode="" Description="Komma-getrennt, ohne Leerzeichen" Type="Variable" Display="always" Required="true" Mask="false">192.168.0.20:3010</Config>
+</Container>
