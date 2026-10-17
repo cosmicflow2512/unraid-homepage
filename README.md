@@ -53,6 +53,7 @@ Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Eine Erweiterung wie
 - Container ohne WebUI-Eintrag im Template werden übersprungen und am Ende aufgelistet.
 - Container im Netzwerk eines anderen Containers (z. B. Gluetun) bekommen die Beschreibung „via <Container>“.
 - Home-Assistant-Widget braucht einen manuell erzeugten Token und wird nicht automatisch angelegt.
+- Die erzeugte `services.yaml` enthält API-Keys im Klartext. Sie liegt nur lokal in der Appdata, nicht im Repo.
 
 ## Jellyfin-Widget
 
@@ -65,4 +66,3 @@ Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Eine Erweiterung wie
 ```bash
 curl -fsSL -o /mnt/cache/appdata/homepage/gen-services.php https://raw.githubusercontent.com/cosmicflow2512/unraid-homepage/main/gen-services.php && /mnt/cache/appdata/homepage/refresh.sh
 ```
-- Die erzeugte `services.yaml` enthält API-Keys im Klartext. Sie liegt nur lokal in der Appdata, nicht im Repo.
