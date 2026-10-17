@@ -6,7 +6,7 @@
 
 - legt das Unraid-Template `my-homepage.xml` in `/boot/config/plugins/dockerMan/templates-user` ab
 - schreibt `settings.yaml`, `widgets.yaml` (CPU/RAM, Google-Suche, Uhrzeit), `docker.yaml`, `bookmarks.yaml`
-- erzeugt `services.yaml` aus allen laufenden Containern, gruppiert in Medien, Arr, Downloads, Smart Home, Dokumente, Netzwerk und System
+- erzeugt `services.yaml` aus allen laufenden Containern, gruppiert in Medien, Arr, Downloads, PS5, Smart Home, Dokumente, Netzwerk und System
 - liest API-Keys für Sonarr, Radarr, Prowlarr, Lidarr, Readarr (`config.xml`) und SABnzbd (`sabnzbd.ini`) aus der Appdata und hängt die passenden Widgets an
 - legt `refresh.sh` an, mit dem die `services.yaml` nach neuen Containern neu erzeugt wird (alte Version → `services.yaml.bak`)
 
@@ -54,6 +54,15 @@ Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Eine Erweiterung wie
 - Container im Netzwerk eines anderen Containers (z. B. Gluetun) bekommen die Beschreibung „via <Container>“.
 - Home-Assistant-Widget braucht einen manuell erzeugten Token und wird nicht automatisch angelegt.
 - Die erzeugte `services.yaml` enthält API-Keys im Klartext. Sie liegt nur lokal in der Appdata, nicht im Repo.
+
+## Eigene Gruppenzuordnung
+
+Datei `/mnt/cache/appdata/homepage/groups.override` anlegen, eine Zeile pro Container (`Containername=Gruppe`, Groß-/Kleinschreibung beim Namen egal). Hat Vorrang vor der automatischen Zuordnung, neue Gruppennamen werden automatisch angelegt. Danach `refresh.sh`.
+
+```
+FileZilla=PS5
+MeinContainer=Werkzeuge
+```
 
 ## Jellyfin-Widget
 

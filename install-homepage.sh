@@ -101,8 +101,9 @@ $runLc   = array_map('strtolower', $running);
 
 $groups = [
   'Medien'      => ['jellyfin','jellyseerr','seerr','jellystat','plex','emby','audiobookshelf','navidrome','music-assistant','musicassistant','kidsdashboard','tdarr','fileflows'],
-  'Arr'         => ['sonarr','radarr','prowlarr','bazarr','lidarr','readarr','nzbhydra','recyclarr','profilarr','sabthrottle','strm','trailarr','umlautadaptarr','notifiarr'],
-  'Downloads'   => ['sabnzbd','jdownloader','nzbdav','infinidysk','infiny','tg2','unpackerr','gluetun','qbittorrent','pyload','fpkg','ps5'],
+  'Arr'         => ['sonarr','radarr','prowlarr','bazarr','lidarr','readarr','nzbhydra','recyclarr','profilarr','sabthrottle','strm','trailarr','umlautadaptarr','notifiarr','sabnzbd','nzbdav','infinidysk','infiny'],
+  'Downloads'   => ['jdownloader','tg2','unpackerr','gluetun','qbittorrent','pyload'],
+  'PS5'         => ['fpkg','ps5','filezilla'],
   'Smart Home'  => ['home-assistant','homeassistant','zigbee','mosquitto','node-red','nodered','esphome','evcc','frigate','scrypted','hermes'],
   'Dokumente'   => ['paperless','sharepoint','immich','nextcloud'],
   'Netzwerk'    => ['adguard','cloudflare','ddns','unifi','nginx','npm','swag','wireguard','wg-easy','traefik','speedtest'],
@@ -110,6 +111,12 @@ $groups = [
 $hpEnv = [];
 foreach (explode("\n", (string)shell_exec('docker inspect -f ' . escapeshellarg('{{range .Config.Env}}{{println .}}{{end}}') . ' ' . escapeshellarg($self) . ' 2>/dev/null')) as $l)
   if (preg_match('/^(HOMEPAGE_VAR_\w+)=(.+)$/', trim($l), $m)) $hpEnv[$m[1]] = $m[2];
+// Feste Zuordnung per Containername (Vorrang vor Stichwoertern)
+$override = ['chromium-web' => 'PS5', 'filezilla' => 'PS5', 'yarr' => 'Arr'];
+// Eigene Zuordnungen: Datei groups.override neben diesem Skript, Zeilen "Containername=Gruppe"
+$ovFile = getenv('GROUPS_FILE') ?: __DIR__ . '/groups.override';
+if (is_file($ovFile)) foreach (file($ovFile) as $l)
+  if (preg_match('/^\s*([^#=]+?)\s*=\s*(.+?)\s*$/', $l, $m)) $override[strtolower($m[1])] = $m[2];
 $arrWidgets = ['sonarr','radarr','prowlarr','lidarr','readarr'];
 
 $out = []; $skipped = [];
@@ -135,8 +142,11 @@ foreach (glob("$tplDir/my-*.xml") as $f) {
 
   $repo = strtolower((string)$x->Repository);
   $key  = strtolower($name) . ' ' . $repo;
-  $grp  = 'System';
-  foreach ($groups as $g => $words) foreach ($words as $w) if (str_contains($key, $w)) { $grp = $g; break 2; }
+  $grp  = $override[strtolower($name)] ?? null;
+  if ($grp === null) {
+    $grp = 'System';
+    foreach ($groups as $g => $words) foreach ($words as $w) if (str_contains($key, $w)) { $grp = $g; break 2; }
+  }
 
   $svc = ['name' => $name, 'href' => $href, 'icon' => trim((string)$x->Icon), 'container' => $running[$i]];
   if (preg_match('#^container:(.+)$#', (string)$x->Network, $m)) $svc['desc'] = 'via ' . $m[1];
@@ -165,7 +175,7 @@ foreach (glob("$tplDir/my-*.xml") as $f) {
 }
 
 $q = fn($s) => '"' . str_replace(['\\','"'], ['\\\\','\\"'], $s) . '"';
-$order = array_merge(array_keys($groups), ['System']);
+$order = array_values(array_unique(array_merge(array_keys($groups), array_keys($out), ['System'])));
 foreach ($order as $g) {
   if (empty($out[$g])) continue;
   usort($out[$g], fn($a, $b) => strcasecmp($a['name'], $b['name']));
