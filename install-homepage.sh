@@ -33,6 +33,7 @@ cat > "$TPL_DIR/my-homepage.xml" <<EOF
   <Config Name="Icons" Target="/app/public/icons" Default="$HP_DIR/icons" Mode="rw" Description="Eigene Icons (/icons/name.png)" Type="Path" Display="always" Required="false" Mask="false">$HP_DIR/icons</Config>
   <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="ro" Description="Container-Status/Stats" Type="Path" Display="advanced" Required="false" Mask="false">/var/run/docker.sock</Config>
   <Config Name="HOMEPAGE_ALLOWED_HOSTS" Target="HOMEPAGE_ALLOWED_HOSTS" Default="$HOST_IP:$HP_PORT" Mode="" Description="Komma-getrennt, ohne Leerzeichen" Type="Variable" Display="always" Required="true" Mask="false">$HOST_IP:$HP_PORT</Config>
+  <Config Name="Jellyfin API-Key" Target="HOMEPAGE_VAR_JELLYFIN_KEY" Default="" Mode="" Description="Jellyfin: Dashboard &gt; API-Schluessel. Danach refresh.sh ausfuehren." Type="Variable" Display="always" Required="false" Mask="true"></Config>
 </Container>
 EOF
 
@@ -99,13 +100,16 @@ $running = array_filter(array_map('trim', file('php://stdin')));
 $runLc   = array_map('strtolower', $running);
 
 $groups = [
-  'Medien'      => ['jellyfin','jellyseerr','seerr','jellystat','plex','emby','audiobookshelf','navidrome','music-assistant','musicassistant','tdarr','fileflows'],
-  'Arr'         => ['sonarr','radarr','prowlarr','bazarr','lidarr','readarr','nzbhydra','recyclarr','profilarr','sabthrottle','strm'],
+  'Medien'      => ['jellyfin','jellyseerr','seerr','jellystat','plex','emby','audiobookshelf','navidrome','music-assistant','musicassistant','kidsdashboard','tdarr','fileflows'],
+  'Arr'         => ['sonarr','radarr','prowlarr','bazarr','lidarr','readarr','nzbhydra','recyclarr','profilarr','sabthrottle','strm','trailarr','umlautadaptarr','notifiarr'],
   'Downloads'   => ['sabnzbd','jdownloader','nzbdav','infinidysk','infiny','tg2','unpackerr','gluetun','qbittorrent','pyload','fpkg','ps5'],
-  'Smart Home'  => ['home-assistant','homeassistant','zigbee','mosquitto','node-red','nodered','esphome','evcc','frigate','hermes'],
+  'Smart Home'  => ['home-assistant','homeassistant','zigbee','mosquitto','node-red','nodered','esphome','evcc','frigate','scrypted','hermes'],
   'Dokumente'   => ['paperless','sharepoint','immich','nextcloud'],
   'Netzwerk'    => ['adguard','cloudflare','ddns','unifi','nginx','npm','swag','wireguard','wg-easy','traefik','speedtest'],
 ];
+$hpEnv = [];
+foreach (explode("\n", (string)shell_exec('docker inspect -f ' . escapeshellarg('{{range .Config.Env}}{{println .}}{{end}}') . ' ' . escapeshellarg($self) . ' 2>/dev/null')) as $l)
+  if (preg_match('/^(HOMEPAGE_VAR_\w+)=(.+)$/', trim($l), $m)) $hpEnv[$m[1]] = $m[2];
 $arrWidgets = ['sonarr','radarr','prowlarr','lidarr','readarr'];
 
 $out = []; $skipped = [];
@@ -151,6 +155,12 @@ foreach (glob("$tplDir/my-*.xml") as $f) {
         $svc['widget'] = ['type' => 'sabnzbd', 'url' => $base, 'key' => $m[1]]; break;
       }
   }
+  if (!isset($svc['widget']) && str_contains($key, 'jellyfin') && !str_contains($key, 'jellyseerr') && !str_contains($key, 'jellystat')
+      && !empty($hpEnv['HOMEPAGE_VAR_JELLYFIN_KEY'])) {
+    $svc['widget'] = ['type' => 'jellyfin', 'url' => $base, 'key' => '{{HOMEPAGE_VAR_JELLYFIN_KEY}}', 'version' => 2,
+      'enableBlocks' => true, 'enableNowPlaying' => true, 'enableMediaControl' => false, 'showEpisodeNumber' => true,
+      'fields' => ['movies', 'series', 'episodes']];
+  }
   $out[$grp][] = $svc;
 }
 
@@ -168,7 +178,13 @@ foreach ($order as $g) {
     echo "        server: unraid\n        container: {$q($s['container'])}\n";
     if (isset($s['widget'])) {
       echo "        widget:\n";
-      foreach ($s['widget'] as $k => $v) echo "          $k: {$q($v)}\n";
+      foreach ($s['widget'] as $k => $v) {
+        if (is_bool($v)) $v = $v ? 'true' : 'false';
+        elseif (is_int($v)) $v = (string)$v;
+        elseif (is_array($v)) $v = '[' . implode(', ', array_map($q, $v)) . ']';
+        else $v = $q($v);
+        echo "          $k: $v\n";
+      }
     }
   }
   echo "\n";

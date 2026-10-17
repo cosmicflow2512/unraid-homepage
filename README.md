@@ -52,5 +52,17 @@ Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Eine Erweiterung wie
 - Benötigt die PHP-CLI auf Unraid (`php -v`).
 - Container ohne WebUI-Eintrag im Template werden übersprungen und am Ende aufgelistet.
 - Container im Netzwerk eines anderen Containers (z. B. Gluetun) bekommen die Beschreibung „via <Container>“.
-- Jellyfin-/Home-Assistant-Widgets brauchen einen manuell erzeugten Token und werden nicht automatisch angelegt.
+- Home-Assistant-Widget braucht einen manuell erzeugten Token und wird nicht automatisch angelegt.
+
+## Jellyfin-Widget
+
+1. In Jellyfin: Dashboard → API-Schlüssel → neuen Schlüssel anlegen.
+2. Unraid: homepage-Container bearbeiten → Feld **Jellyfin API-Key** (`HOMEPAGE_VAR_JELLYFIN_KEY`) ausfüllen → Apply.
+3. `refresh.sh` ausführen. Der Generator liest die Variable aus dem laufenden homepage-Container und legt das Widget an (`version: 2` für Jellyfin ≥ 10.12). Der Key selbst steht nicht in der `services.yaml`, sondern wird von Homepage aus der Variable eingesetzt.
+
+## Update auf neue Generator-Version
+
+```bash
+curl -fsSL -o /mnt/cache/appdata/homepage/gen-services.php https://raw.githubusercontent.com/cosmicflow2512/unraid-homepage/main/gen-services.php && /mnt/cache/appdata/homepage/refresh.sh
+```
 - Die erzeugte `services.yaml` enthält API-Keys im Klartext. Sie liegt nur lokal in der Appdata, nicht im Repo.

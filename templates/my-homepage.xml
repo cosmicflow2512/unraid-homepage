@@ -21,4 +21,5 @@
   <Config Name="Icons" Target="/app/public/icons" Default="/mnt/cache/appdata/homepage/icons" Mode="rw" Description="Eigene Icons (/icons/name.png)" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/appdata/homepage/icons</Config>
   <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="ro" Description="Container-Status/Stats" Type="Path" Display="advanced" Required="false" Mask="false">/var/run/docker.sock</Config>
   <Config Name="HOMEPAGE_ALLOWED_HOSTS" Target="HOMEPAGE_ALLOWED_HOSTS" Default="192.168.0.20:3010" Mode="" Description="Komma-getrennt, ohne Leerzeichen" Type="Variable" Display="always" Required="true" Mask="false">192.168.0.20:3010</Config>
+  <Config Name="Jellyfin API-Key" Target="HOMEPAGE_VAR_JELLYFIN_KEY" Default="" Mode="" Description="Jellyfin: Dashboard &gt; API-Schluessel. Danach refresh.sh ausfuehren." Type="Variable" Display="always" Required="false" Mask="true"></Config>
 </Container>
