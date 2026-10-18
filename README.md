@@ -56,6 +56,10 @@ Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Eine Erweiterung wie
 - Home-Assistant-Widget braucht einen manuell erzeugten Token und wird nicht automatisch angelegt.
 - Die erzeugte `services.yaml` enthält API-Keys im Klartext. Sie liegt nur lokal in der Appdata, nicht im Repo.
 
+## Schnellzugriff
+
+Die Bookmark-Gruppe **Schnellzugriff** steht direkt unter der Suchleiste (Reihenfolge über `layout` in `settings.yaml`). Links in `/mnt/cache/appdata/homepage/config/bookmarks.yaml` anpassen; Icons kommen über den Favicon-Dienst von Google.
+
 ## Eigene Gruppenzuordnung
 
 Datei `/mnt/cache/appdata/homepage/groups.override` anlegen, eine Zeile pro Container (`Containername=Gruppe`, Groß-/Kleinschreibung beim Namen egal). Hat Vorrang vor der automatischen Zuordnung, neue Gruppennamen werden automatisch angelegt. Danach `refresh.sh`.

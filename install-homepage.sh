@@ -44,6 +44,9 @@ cat > "$HP_DIR/config/settings.yaml" <<'EOF'
 title: Baum
 theme: dark
 layout:
+  Schnellzugriff:
+    style: row
+    columns: 7
   Unraid:
     style: row
     columns: 1
@@ -92,6 +95,28 @@ EOF
 
 # --- bookmarks.yaml ---
 cat > "$HP_DIR/config/bookmarks.yaml" <<EOF
+- Schnellzugriff:
+    - Kleinanzeigen:
+        - icon: https://www.google.com/s2/favicons?domain=kleinanzeigen.de&sz=64
+          href: https://www.kleinanzeigen.de/
+    - KNX-User-Forum:
+        - icon: https://www.google.com/s2/favicons?domain=knx-user-forum.de&sz=64
+          href: https://knx-user-forum.de/
+    - mydealz:
+        - icon: https://www.google.com/s2/favicons?domain=mydealz.de&sz=64
+          href: https://www.mydealz.de/
+    - Amazon:
+        - icon: https://www.google.com/s2/favicons?domain=amazon.de&sz=64
+          href: https://www.amazon.de/
+    - Amazon Retourenkauf:
+        - icon: https://www.google.com/s2/favicons?domain=amazon.de&sz=64
+          href: https://www.amazon.de/s?k=Amazon+Retourenkauf
+    - idealo:
+        - icon: https://www.google.com/s2/favicons?domain=idealo.de&sz=64
+          href: https://www.idealo.de/
+    - YouTube:
+        - icon: https://www.google.com/s2/favicons?domain=youtube.com&sz=64
+          href: https://www.youtube.com/
 - Server:
     - Unraid:
         - abbr: UR
