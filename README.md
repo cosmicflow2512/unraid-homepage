@@ -58,7 +58,14 @@ Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Eine Erweiterung wie
 
 ## Schnellzugriff
 
-Die Bookmark-Gruppe **Schnellzugriff** steht direkt unter der Suchleiste (Reihenfolge über `layout` in `settings.yaml`). Links in `/mnt/cache/appdata/homepage/config/bookmarks.yaml` anpassen; Icons kommen über den Favicon-Dienst von Google.
+Die Gruppe **Schnellzugriff** steht direkt unter der Suchleiste, als große Kacheln mit Symbol (Styling über `config/custom.css`). Links in `/mnt/cache/appdata/homepage/quicklinks.txt` pflegen, eine Zeile pro Link:
+
+```
+Name|URL|Domain-für-Icon
+Kleinanzeigen|https://www.kleinanzeigen.de/|kleinanzeigen.de
+```
+
+Danach `refresh.sh`. Icons kommen über den Favicon-Dienst von Google.
 
 ## Eigene Gruppenzuordnung
 
@@ -77,7 +84,7 @@ MeinContainer=Werkzeuge
 
 ## Unraid-Kachel
 
-Steht als eigene Gruppe ganz oben (Reihenfolge über `layout` in `settings.yaml`) und verlinkt auf `UNRAID_URL`. Mit `HOMEPAGE_VAR_UNRAID_KEY` (API-Key mit Rolle ADMIN) kommt das Unraid-Widget dazu: Status, CPU, RAM, Array-Belegung, Benachrichtigungen. Voraussetzung laut Homepage-Doku: Unraid 7.2 oder Unraid-Connect-Plugin ab 2025.08.19.1850.
+Steht als eigene Gruppe ganz oben (Reihenfolge über `layout` in `settings.yaml`) und verlinkt auf `UNRAID_URL`, daneben die Kachel **Docker** (`UNRAID_URL/Docker`) zum Starten/Stoppen der Container. Mit `HOMEPAGE_VAR_UNRAID_KEY` (API-Key mit Rolle ADMIN) kommt das Unraid-Widget dazu: Status, CPU, RAM, Array-Belegung, Benachrichtigungen. Voraussetzung laut Homepage-Doku: Unraid 7.2 oder Unraid-Connect-Plugin ab 2025.08.19.1850.
 
 ## Update auf neue Generator-Version
 

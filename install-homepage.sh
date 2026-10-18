@@ -47,9 +47,10 @@ layout:
   Schnellzugriff:
     style: row
     columns: 7
+    header: false
   Unraid:
     style: row
-    columns: 1
+    columns: 2
   Medien:
   Arr:
   Downloads:
@@ -95,28 +96,6 @@ EOF
 
 # --- bookmarks.yaml ---
 cat > "$HP_DIR/config/bookmarks.yaml" <<EOF
-- Schnellzugriff:
-    - Kleinanzeigen:
-        - icon: https://www.google.com/s2/favicons?domain=kleinanzeigen.de&sz=64
-          href: https://www.kleinanzeigen.de/
-    - KNX-User-Forum:
-        - icon: https://www.google.com/s2/favicons?domain=knx-user-forum.de&sz=64
-          href: https://knx-user-forum.de/
-    - mydealz:
-        - icon: https://www.google.com/s2/favicons?domain=mydealz.de&sz=64
-          href: https://www.mydealz.de/
-    - Amazon:
-        - icon: https://www.google.com/s2/favicons?domain=amazon.de&sz=64
-          href: https://www.amazon.de/
-    - Amazon Retourenkauf:
-        - icon: https://www.google.com/s2/favicons?domain=amazon.de&sz=64
-          href: https://www.amazon.de/s?k=Amazon+Retourenkauf
-    - idealo:
-        - icon: https://www.google.com/s2/favicons?domain=idealo.de&sz=64
-          href: https://www.idealo.de/
-    - YouTube:
-        - icon: https://www.google.com/s2/favicons?domain=youtube.com&sz=64
-          href: https://www.youtube.com/
 - Server:
     - Unraid:
         - abbr: UR
@@ -125,6 +104,26 @@ cat > "$HP_DIR/config/bookmarks.yaml" <<EOF
     - GitHub:
         - abbr: GH
           href: https://github.com/cosmicflow2512
+EOF
+
+# --- Schnellzugriff (Name|URL|Domain fuer Icon) ---
+[ -f "$HP_DIR/quicklinks.txt" ] || cat > "$HP_DIR/quicklinks.txt" <<'EOF'
+Kleinanzeigen|https://www.kleinanzeigen.de/|kleinanzeigen.de
+KNX-User-Forum|https://knx-user-forum.de/|knx-user-forum.de
+mydealz|https://www.mydealz.de/|mydealz.de
+Amazon|https://www.amazon.de/|amazon.de
+Amazon Retourenkauf|https://www.amazon.de/s?k=Amazon+Retourenkauf|amazon.de
+idealo|https://www.idealo.de/|idealo.de
+YouTube|https://www.youtube.com/|youtube.com
+EOF
+
+# --- custom.css: grosse Symbole im Schnellzugriff ---
+cat > "$HP_DIR/config/custom.css" <<'EOF'
+li[id^="ql-"] .service-title { flex-direction: column; align-items: center; }
+li[id^="ql-"] .service-icon { width: 100%; height: 76px; padding-top: 10px; }
+li[id^="ql-"] .service-icon img { width: 56px !important; height: 56px !important; }
+li[id^="ql-"] .service-title-text { width: 100%; border-radius: 0 0 0.375rem 0.375rem; }
+li[id^="ql-"] .service-name { text-align: center; padding-top: 2px; }
 EOF
 
 # --- Generator (liest my-*.xml der laufenden Container) ---
@@ -218,17 +217,32 @@ $ur = ['name' => 'Unraid', 'href' => $unraidUrl . '/', 'icon' => 'unraid.png', '
 if (!empty($hpEnv['HOMEPAGE_VAR_UNRAID_KEY']))
   $ur['widget'] = ['type' => 'unraid', 'url' => $unraidUrl, 'key' => '{{HOMEPAGE_VAR_UNRAID_KEY}}',
     'fields' => ['status', 'cpu', 'memoryPercent', 'arrayFree', 'arrayUsedPercent', 'notifications']];
-$out = ['Unraid' => [$ur]] + $out;
+$dk = ['name' => 'Docker', 'href' => $unraidUrl . '/Docker', 'icon' => 'docker.png', 'desc' => 'Container starten/stoppen'];
+$out = ['Unraid' => [$ur, $dk]] + $out;
+
+// Schnellzugriff aus quicklinks.txt (Zeilen: Name|URL|Domain fuer Icon)
+$qlFile = getenv('QUICKLINKS_FILE') ?: __DIR__ . '/quicklinks.txt';
+$ql = [];
+if (is_file($qlFile)) foreach (file($qlFile) as $l) {
+  $l = trim($l); if ($l === '' || $l[0] === '#') continue;
+  $p = array_map('trim', explode('|', $l));
+  if (count($p) < 2) continue;
+  $dom = $p[2] ?? parse_url($p[1], PHP_URL_HOST);
+  $ql[] = ['name' => $p[0], 'href' => $p[1], 'id' => 'ql-' . preg_replace('/[^a-z0-9]+/', '-', strtolower($p[0])),
+           'icon' => 'https://www.google.com/s2/favicons?domain=' . $dom . '&sz=128'];
+}
+if ($ql) $out = ['Schnellzugriff' => $ql] + $out;
 
 $q = fn($s) => '"' . str_replace(['\\','"'], ['\\\\','\\"'], $s) . '"';
-$order = array_values(array_unique(array_merge(['Unraid'], array_keys($groups), array_keys($out), ['System'])));
+$order = array_values(array_unique(array_merge(['Schnellzugriff', 'Unraid'], array_keys($groups), array_keys($out), ['System'])));
 foreach ($order as $g) {
   if (empty($out[$g])) continue;
-  usort($out[$g], fn($a, $b) => strcasecmp($a['name'], $b['name']));
+  if (!in_array($g, ['Schnellzugriff', 'Unraid'], true)) usort($out[$g], fn($a, $b) => strcasecmp($a['name'], $b['name']));
   echo "- $g:\n";
   foreach ($out[$g] as $s) {
     echo "    - {$q($s['name'])}:\n";
     echo "        href: {$q($s['href'])}\n";
+    if (isset($s['id'])) echo "        id: {$q($s['id'])}\n";
     if ($s['icon'] !== '') echo "        icon: {$q($s['icon'])}\n";
     if (isset($s['desc'])) echo "        description: {$q($s['desc'])}\n";
     if (isset($s['container'])) echo "        server: unraid\n        container: {$q($s['container'])}\n";

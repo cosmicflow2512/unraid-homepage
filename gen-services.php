@@ -87,17 +87,32 @@ $ur = ['name' => 'Unraid', 'href' => $unraidUrl . '/', 'icon' => 'unraid.png', '
 if (!empty($hpEnv['HOMEPAGE_VAR_UNRAID_KEY']))
   $ur['widget'] = ['type' => 'unraid', 'url' => $unraidUrl, 'key' => '{{HOMEPAGE_VAR_UNRAID_KEY}}',
     'fields' => ['status', 'cpu', 'memoryPercent', 'arrayFree', 'arrayUsedPercent', 'notifications']];
-$out = ['Unraid' => [$ur]] + $out;
+$dk = ['name' => 'Docker', 'href' => $unraidUrl . '/Docker', 'icon' => 'docker.png', 'desc' => 'Container starten/stoppen'];
+$out = ['Unraid' => [$ur, $dk]] + $out;
+
+// Schnellzugriff aus quicklinks.txt (Zeilen: Name|URL|Domain fuer Icon)
+$qlFile = getenv('QUICKLINKS_FILE') ?: __DIR__ . '/quicklinks.txt';
+$ql = [];
+if (is_file($qlFile)) foreach (file($qlFile) as $l) {
+  $l = trim($l); if ($l === '' || $l[0] === '#') continue;
+  $p = array_map('trim', explode('|', $l));
+  if (count($p) < 2) continue;
+  $dom = $p[2] ?? parse_url($p[1], PHP_URL_HOST);
+  $ql[] = ['name' => $p[0], 'href' => $p[1], 'id' => 'ql-' . preg_replace('/[^a-z0-9]+/', '-', strtolower($p[0])),
+           'icon' => 'https://www.google.com/s2/favicons?domain=' . $dom . '&sz=128'];
+}
+if ($ql) $out = ['Schnellzugriff' => $ql] + $out;
 
 $q = fn($s) => '"' . str_replace(['\\','"'], ['\\\\','\\"'], $s) . '"';
-$order = array_values(array_unique(array_merge(['Unraid'], array_keys($groups), array_keys($out), ['System'])));
+$order = array_values(array_unique(array_merge(['Schnellzugriff', 'Unraid'], array_keys($groups), array_keys($out), ['System'])));
 foreach ($order as $g) {
   if (empty($out[$g])) continue;
-  usort($out[$g], fn($a, $b) => strcasecmp($a['name'], $b['name']));
+  if (!in_array($g, ['Schnellzugriff', 'Unraid'], true)) usort($out[$g], fn($a, $b) => strcasecmp($a['name'], $b['name']));
   echo "- $g:\n";
   foreach ($out[$g] as $s) {
     echo "    - {$q($s['name'])}:\n";
     echo "        href: {$q($s['href'])}\n";
+    if (isset($s['id'])) echo "        id: {$q($s['id'])}\n";
     if ($s['icon'] !== '') echo "        icon: {$q($s['icon'])}\n";
     if (isset($s['desc'])) echo "        description: {$q($s['desc'])}\n";
     if (isset($s['container'])) echo "        server: unraid\n        container: {$q($s['container'])}\n";
