@@ -46,7 +46,16 @@ curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-homepage.xml \
 
 ## Als Chrome-Neuer-Tab
 
-Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Eine Erweiterung wie [New Tab Redirect](https://github.com/jimschubert/newtab-redirect) oder New Tab Override übernimmt das; die Dashboard-URL dort eintragen.
+Chrome kann den Neuer-Tab nicht selbst auf eine URL setzen. Dafür liegt im Ordner `chrome-newtab/` eine minimale Erweiterung (keine Berechtigungen), die jeden neuen Tab auf das Dashboard umleitet:
+
+1. Repo herunterladen (Code → Download ZIP) und entpacken, oder `git clone`.
+2. Bei abweichender Adresse die URL in `chrome-newtab/newtab.js` anpassen.
+3. In Chrome `chrome://extensions` öffnen → **Entwicklermodus** (oben rechts) einschalten → **Entpackte Erweiterung laden** → Ordner `chrome-newtab` wählen.
+4. Beim ersten neuen Tab fragt Chrome, ob die Änderung der Seite „Neuer Tab“ beibehalten werden soll → **Beibehalten**.
+
+Den Ordner danach nicht löschen oder verschieben, Chrome lädt die Erweiterung von dort. Im Inkognito-Fenster wirkt sie nicht (Chrome-Einschränkung).
+
+Alternative aus dem Web Store: [New Tab Redirect](https://github.com/jimschubert/newtab-redirect).
 
 ## Hinweise
 
