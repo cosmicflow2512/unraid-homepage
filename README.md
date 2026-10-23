@@ -2,6 +2,8 @@
 
 [gethomepage](https://gethomepage.dev) als Startseite/Neuer-Tab-Dashboard auf Unraid. Die `services.yaml` wird automatisch aus den Unraid-Templates (`my-*.xml`) aller laufenden Container erzeugt, mit WebUI-URL, Host-Port, Icon und Container-Status.
 
+> Homarr-Variante mit Container-Steuerung: siehe [`homarr/`](homarr/README.md).
+
 ## Was das Skript macht
 
 - legt das Unraid-Template `my-homepage.xml` in `/boot/config/plugins/dockerMan/templates-user` ab

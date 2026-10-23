@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>homarr</Name>
+  <Repository>ghcr.io/homarr-labs/homarr:latest</Repository>
+  <TemplateURL>https://raw.githubusercontent.com/cosmicflow2512/unraid-homepage/main/templates/my-homarr.xml</TemplateURL>
+  <Registry>https://github.com/homarr-labs/homarr/pkgs/container/homarr</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/homarr-labs/homarr</Support>
+  <Project>https://homarr.dev</Project>
+  <Overview>Homarr Dashboard mit Docker-Steuerung (Start/Stop/Restart).</Overview>
+  <Category>Tools: Network:Management</Category>
+  <WebUI>http://[IP]:[PORT:7575]/</WebUI>
+  <Icon>https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/homarr.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <Config Name="WebUI" Target="7575" Default="7575" Mode="tcp" Description="Web-Port" Type="Port" Display="always" Required="true" Mask="false">7575</Config>
+  <Config Name="Appdata" Target="/appdata" Default="/mnt/cache/appdata/homarr" Mode="rw" Description="Datenbank und Konfiguration" Type="Path" Display="always" Required="true" Mask="false">/mnt/cache/appdata/homarr</Config>
+  <Config Name="Docker Socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="rw" Description="Fuer Start/Stop/Restart der Container" Type="Path" Display="always" Required="false" Mask="false">/var/run/docker.sock</Config>
+  <Config Name="SECRET_ENCRYPTION_KEY" Target="SECRET_ENCRYPTION_KEY" Default="" Mode="" Description="64-stelliger Hex-Schluessel (openssl rand -hex 32), nicht verlieren" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+</Container>
