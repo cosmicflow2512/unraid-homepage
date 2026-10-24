@@ -175,8 +175,17 @@ foreach (glob("$tplDir/my-*.xml") as $f) {
     if ($t === 'Port' && $val !== '') $ports[$target] = $val;
     if ($t === 'Path' && $target === '/config' && $val !== '') $cfgPath = $val;
   }
-  $href = str_replace('[IP]', $ip, $webui);
-  $href = preg_replace_callback('/\[PORT:(\d+)\]/', fn($m) => $ports[$m[1]] ?? $m[1], $href);
+  // Eigene IP (br0/custom), sonst Server-IP
+  $net = (string)$x->Network;
+  $myIp = trim((string)$x->MyIP);
+  $useIp = ($myIp !== '' && !in_array($net, ['bridge', 'host'], true) && !str_starts_with($net, 'container:')) ? $myIp : $ip;
+  $href = str_replace('[IP]', $useIp, $webui);
+  // Container-Port -> Host-Port; zeigt die WebUI auf einen ungemappten Port und gibt es genau ein Mapping, dieses nehmen
+  $href = preg_replace_callback('/\[PORT:(\d+)\]/', function ($m) use ($ports, $net) {
+    if (isset($ports[$m[1]])) return $ports[$m[1]];
+    if ($net === 'bridge' && count($ports) === 1) return reset($ports);
+    return $m[1];
+  }, $href);
   $base = preg_replace('#^(https?://[^/]+).*$#', '$1', $href);
 
   $repo = strtolower((string)$x->Repository);
