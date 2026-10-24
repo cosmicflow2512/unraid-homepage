@@ -16,6 +16,11 @@ $cfg = [
   'groups'    => getenv('GROUPS_FILE') ?: __DIR__ . '/groups.override',
   'quick'     => getenv('QUICKLINKS_FILE') ?: __DIR__ . '/quicklinks.txt',
   'dry'       => getenv('DRY_RUN') === '1',
+  'style'     => getenv('STYLE') ?: 'klassisch',
+  'home'      => (getenv('SET_HOME') ?: (getenv('STYLE') === 'kompakt' ? '0' : '1')) === '1',
+  'city'      => getenv('WEATHER_CITY') ?: 'Friesoythe',
+  'lat'       => (float)(getenv('WEATHER_LAT') ?: 53.0206),
+  'lon'       => (float)(getenv('WEATHER_LON') ?: 7.8586),
 ];
 if ($cfg['key'] === '' && !$cfg['dry']) { fwrite(STDERR, "HOMARR_API_KEY fehlt\n"); exit(1); }
 
@@ -194,35 +199,74 @@ function laneCols($l) {
 }
 
 // Inhalt komplett neu aufbauen (vorhandene Root-Sektionen bleiben, alles andere wird ersetzt)
+$style = $cfg['style'];
 $outSections = array_map(fn($s) => ['id' => $s['id'], 'kind' => 'empty', 'yOffset' => (int)$s['yOffset'], 'xOffset' => (int)$s['xOffset']], $roots);
 $outItems = [];
-$y = array_fill_keys(array_column($layouts, 'id'), 0);
+$y = array_fill_keys(array_column($layouts, 'id'), 0);     // Cursor fuer volle Breite
+$colY = array_fill_keys(array_column($layouts, 'id'), []); // Cursor je Spalte (Stil kompakt)
 $adv = ['title' => null, 'customCssClasses' => [], 'borderColor' => ''];
 
-$addContainer = function (string $title, array $children, callable $place) use (&$outSections, &$outItems, &$y, $layouts, $main) {
+// $span: 'full' = volle Breite, 'col' = Spalte (bei breitem Layout 3 Spalten nebeneinander)
+$addContainer = function (string $title, array $children, callable $place, string $span = 'full', bool $label = true)
+  use (&$outSections, &$outItems, &$y, &$colY, $layouts, $main) {
   $sid = cid();
   $secLayouts = []; $childLayouts = [];
   foreach ($layouts as $l) {
-    $cols = laneCols($l);
-    [$h, $pos] = $place($cols);          // Hoehe des Containers und Positionen der Kinder
-    $secLayouts[] = ['layoutId' => $l['id'], 'xOffset' => 0, 'yOffset' => $y[$l['id']], 'width' => $cols, 'height' => $h, 'parentSectionId' => $main['id']];
-    $y[$l['id']] += $h;
-    foreach ($pos as $idx => $p) $childLayouts[$idx][] = $p + ['layoutId' => $l['id'], 'sectionId' => $sid];
+    $lid = $l['id']; $lane = laneCols($l);
+    $n = ($span === 'col' && $lane >= 9) ? 3 : 1;
+    if ($n === 1) {
+      $start = max([$y[$lid], ...array_values($colY[$lid])]);
+      [$h, $pos] = $place($lane);
+      $secLayouts[] = ['layoutId' => $lid, 'xOffset' => 0, 'yOffset' => $start, 'width' => $lane, 'height' => $h, 'parentSectionId' => $main['id']];
+      $y[$lid] = $start + $h; $colY[$lid] = [];
+    } else {
+      $cw = intdiv($lane, $n);
+      for ($c = 0; $c < $n; $c++) $colY[$lid][$c] ??= $y[$lid];
+      $c = array_keys($colY[$lid], min($colY[$lid]))[0];
+      $w = $c === $n - 1 ? $lane - $cw * ($n - 1) : $cw;
+      [$h, $pos] = $place($w);
+      $secLayouts[] = ['layoutId' => $lid, 'xOffset' => $c * $cw, 'yOffset' => $colY[$lid][$c], 'width' => $w, 'height' => $h, 'parentSectionId' => $main['id']];
+      $colY[$lid][$c] += $h;
+    }
+    foreach ($pos as $idx => $p) $childLayouts[$idx][] = $p + ['layoutId' => $lid, 'sectionId' => $sid];
   }
   $outSections[] = ['id' => $sid, 'kind' => 'container', 'collapsed' => false,
-    'options' => ['title' => $title, 'customCssClasses' => [], 'borderColor' => '', 'showLabel' => true, 'collapsible' => false, 'showOpenAll' => false, 'scrollable' => false],
+    'options' => ['title' => $title, 'customCssClasses' => [], 'borderColor' => '', 'showLabel' => $label, 'collapsible' => false, 'showOpenAll' => false, 'scrollable' => false],
     'layouts' => $secLayouts];
   foreach ($children as $idx => $c) $outItems[] = $c + ['id' => cid(), 'layouts' => $childLayouts[$idx]];
 };
 
-foreach ($sections as $title => $apps) {
-  $children = array_map(fn($a) => ['kind' => 'app', 'options' => ['appId' => $a['appId'], 'openInNewTab' => true, 'showTitle' => true],
-    'integrationIds' => [], 'advancedOptions' => $adv], $apps);
-  $addContainer($title, $children, function ($cols) use ($apps) {
-    $pos = [];
-    foreach (array_keys($apps) as $i) $pos[] = ['xOffset' => $i % $cols, 'yOffset' => intdiv($i, $cols), 'width' => 1, 'height' => 1];
-    return [max(1, (int)ceil(count($apps) / $cols)), $pos];
-  });
+// Raster fuer App-Kacheln: $tw Spalten pro Kachel
+$grid = function (int $count, int $tw) {
+  return function ($cols) use ($count, $tw) {
+    $tw = min($tw, $cols); $per = max(1, intdiv($cols, $tw)); $pos = [];
+    for ($i = 0; $i < $count; $i++) $pos[] = ['xOffset' => ($i % $per) * $tw, 'yOffset' => intdiv($i, $per), 'width' => $tw, 'height' => 1];
+    return [max(1, (int)ceil($count / $per)), $pos];
+  };
+};
+$appItem = fn($a, $layout = null) => ['kind' => 'app', 'options' => array_filter(['appId' => $a['appId'], 'openInNewTab' => true, 'showTitle' => true, 'layout' => $layout], fn($v) => $v !== null),
+  'integrationIds' => [], 'advancedOptions' => $adv];
+
+if ($style === 'kompakt') {
+  // Kopfband: Uhr mit Wetter + Schnellzugriff als Lesezeichen-Leiste
+  $loc = ['name' => $cfg['city'], 'latitude' => $cfg['lat'], 'longitude' => $cfg['lon']];
+  $quickIds = array_column(array_merge($sections['Unraid'] ?? [], $sections['Schnellzugriff'] ?? []), 'appId');
+  $band = [
+    ['kind' => 'clock', 'options' => ['is24HourFormat' => true, 'showDate' => true, 'showWeather' => true, 'weatherLocation' => $loc, 'useCustomTimezone' => true, 'timezone' => 'Europe/Berlin'], 'integrationIds' => [], 'advancedOptions' => $adv],
+    ['kind' => 'bookmarks', 'options' => ['title' => '', 'showTitle' => false, 'layout' => 'row', 'variant' => 'soft', 'spacing' => 'md', 'hideHostname' => true, 'openNewTab' => true, 'grow' => true, 'items' => $quickIds], 'integrationIds' => [], 'advancedOptions' => $adv],
+  ];
+  $addContainer('Start', $band, function ($cols) {
+    if ($cols < 9) return [4, [['xOffset' => 0, 'yOffset' => 0, 'width' => $cols, 'height' => 2], ['xOffset' => 0, 'yOffset' => 2, 'width' => $cols, 'height' => 2]]];
+    return [2, [['xOffset' => 0, 'yOffset' => 0, 'width' => 3, 'height' => 2], ['xOffset' => 3, 'yOffset' => 0, 'width' => $cols - 3, 'height' => 2]]];
+  }, 'full', false);
+  // Gruppen als Listen in drei Spalten nebeneinander, Kacheln quer (Icon links, Name rechts)
+  foreach ($sections as $title => $apps) {
+    if (in_array($title, ['Schnellzugriff', 'Unraid'], true)) continue;
+    $addContainer($title, array_map(fn($a) => $appItem($a, 'row'), $apps), $grid(count($apps), 2), 'col');
+  }
+} else {
+  foreach ($sections as $title => $apps)
+    $addContainer($title, array_map(fn($a) => $appItem($a), $apps), $grid(count($apps), 1));
 }
 
 // Status: Downloads (SABnzbd) + Mediaserver (Jellyfin), falls Integrationen vorhanden
@@ -242,5 +286,10 @@ $addContainer('Docker', [['kind' => 'dockerContainers', 'options' => new stdClas
 
 api('PUT', "/api/boards/$boardId/content", ['sections' => $outSections, 'items' => $outItems]);
 out('Board gespeichert: ' . count($outSections) . ' Sektionen, ' . count($outItems) . ' Elemente');
-try { api('PATCH', "/api/boards/$boardId/home"); out('Als Startboard gesetzt'); } catch (Throwable $e) { out('Startboard: ' . $e->getMessage()); }
+if ($style === 'kompakt') {
+  $css = "body { background: radial-gradient(1200px 600px at 10% -10%, #1e3a8a55, transparent), radial-gradient(900px 500px at 110% 10%, #7c3aed44, transparent), #0b1020 !important; }";
+  try { api('PATCH', "/api/boards/$boardId/settings", ['primaryColor' => '#3b82f6', 'secondaryColor' => '#a855f7', 'opacity' => 80, 'itemRadius' => 'md', 'customCss' => $css]); out('Board-Optik gesetzt'); }
+  catch (Throwable $e) { out('Board-Optik: ' . $e->getMessage()); }
+}
+if ($cfg['home']) { try { api('PATCH', "/api/boards/$boardId/home"); out('Als Startboard gesetzt'); } catch (Throwable $e) { out('Startboard: ' . $e->getMessage()); } }
 out("Fertig: {$cfg['url']}/boards/{$cfg['board']}");

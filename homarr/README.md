@@ -20,6 +20,17 @@ curl -fsSL https://raw.githubusercontent.com/cosmicflow2512/unraid-homepage/main
 3. Homarr → Verwaltung → Tools → API → API-Key erzeugen und in `/mnt/cache/appdata/homarr-sync/sync.env` bei `HOMARR_API_KEY=` eintragen.
 4. `/mnt/cache/appdata/homarr-sync/sync.sh`
 
+## Zweites Board in anderer Optik
+
+```bash
+STYLE=kompakt BOARD=Baum-Kompakt /mnt/cache/appdata/homarr-sync/sync.sh
+```
+
+- Kopfband ohne Titel: Uhr mit Wetter (Standard Friesoythe, `WEATHER_CITY`/`WEATHER_LAT`/`WEATHER_LON`) und Schnellzugriff + Unraid als Lesezeichen-Leiste
+- Gruppen als Listen in drei Spalten nebeneinander, App-Kacheln quer (Icon links, Name rechts)
+- Blau/Violett statt Rot, 80 % Deckkraft, Verlaufs-Hintergrund per Custom CSS
+- Wird nicht als Startboard gesetzt (`SET_HOME=1` erzwingt es)
+
 ## Wichtig
 
 - Jeder Lauf von `sync.sh` baut das Board **komplett neu auf**. Von Hand im Editor verschobene Kacheln gehen dabei verloren. Apps und Integrationen werden über Name bzw. Art+URL abgeglichen und nicht doppelt angelegt.
